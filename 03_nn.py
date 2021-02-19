@@ -25,9 +25,9 @@ class Embedding(nn.Module):
 
 
 if __name__ == '__main__':
-    N_BATCH = 3
+    N_BATCH = 10
     N_EPOCH = 200
-    N_FACTOR = 4
+    N_FACTOR = 10
     lr = 0.01
     l2_lambda = 0.01
 
@@ -37,9 +37,9 @@ if __name__ == '__main__':
     n_test = int(len(dataset)*0.1)
     n_vali = len(dataset) - n_train - n_test
     trainset, testset, valiset = random_split(dataset, [n_train, n_test, n_vali])
-    trainloader = DataLoader(dataset=trainset, batch_size=N_BATCH)
-    testloader = DataLoader(dataset=testset, batch_size=N_BATCH)
-    valiloader = DataLoader(dataset=valiset, batch_size=N_BATCH)
+    trainloader = DataLoader(dataset=trainset, batch_size=N_BATCH, num_workers=4, shuffle=True)
+    testloader = DataLoader(dataset=testset, batch_size=N_BATCH, num_workers=4, shuffle=True)
+    valiloader = DataLoader(dataset=valiset, batch_size=N_BATCH, num_workers=4, shuffle=True)
 
     print('making model, loss, optimizer')
     model = Embedding(N_USER=dataset.n_user, N_ITEM=dataset.n_movie, N_EMBED=N_FACTOR)
