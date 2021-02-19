@@ -1,23 +1,26 @@
-import numpy as np
+import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
+import numpy as np
+import config
 from dataset import MovieLensDataset
 
 
 class Embedding(nn.Module):
-    def __init__(self, N_INPUT, N_EMBED):
+    def __init__(self, N_USER, N_ITEM, N_EMBED):
         super(Embedding, self).__init__()
 
         # embedding layer (B, 2) -> (B, 2, N_EMBED)
-        self.embedding = nn.Embedding(N_INPUT, N_EMBED)
+        self.embedding_user = nn.Embedding(N_USER, N_EMBED)
+        self.embedding_item = nn.Embedding(N_ITEM, N_EMBED)
 
     def forward(self, x):
         # x (B, 2)
-        x[:, 1] += x[:, 0]
-        x = self.embedding(x)                           # (B, 2, N_EMBED)
-        x = torch.sum(x[:, 0, :] * x[:, 1, :], dim=1)   # (B)
+        x_user = self.embedding_user(x[:, 0])
+        x_item = self.embedding_item(x[:, 1])
+        x =  torch.sum(x_user*x_item, dim=1)
         return x
 
 
@@ -28,7 +31,8 @@ if __name__ == '__main__':
     lr = 0.01
     l2_lambda = 0.01
 
-    dataset = MovieLensDataset(path='data/ml-latest-small/ratings.csv', is_tensor=True)
+    print('making dataset')
+    dataset = MovieLensDataset(path=config.DATA_PATH, is_tensor=True)
     n_train = int(len(dataset)*0.8)
     n_test = int(len(dataset)*0.1)
     n_vali = len(dataset) - n_train - n_test
@@ -37,13 +41,16 @@ if __name__ == '__main__':
     testloader = DataLoader(dataset=testset, batch_size=N_BATCH)
     valiloader = DataLoader(dataset=valiset, batch_size=N_BATCH)
 
-    print('model, loss, optimizer')
-    model = Embedding(N_INPUT=(dataset.n_user + dataset.n_movie), N_EMBED=N_FACTOR)
+    print('making model, loss, optimizer')
+    model = Embedding(N_USER=dataset.n_user, N_ITEM=dataset.n_movie, N_EMBED=N_FACTOR)
     criterion = nn.MSELoss()
     optimizer = optim.SGD(model.parameters(), lr=lr)
 
     print('training')
     for epoch in range(N_EPOCH):
+        # measure dt / epoch
+        start = time.time()
+
         # train
         train_loss = 0
         for i, data in enumerate(trainloader):
@@ -82,6 +89,9 @@ if __name__ == '__main__':
             vali_loss += loss.item()
         vali_loss *= 1 / len(valiset)
 
-        print('epoch: %i | RMSE: train=%.3f, test=%.3f, vali=%.3f)' % (epoch+1, np.sqrt(train_loss), np.sqrt(test_loss), np.sqrt(vali_loss)))
+        # measure dt
+        end = time.time()
+
+        print('epoch: %i | RMSE: train=%.3f, test=%.3f, vali=%.3f | time: %.2f s)' % (epoch+1, np.sqrt(train_loss), np.sqrt(test_loss), np.sqrt(vali_loss), end-start))
 
 

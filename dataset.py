@@ -32,6 +32,7 @@ class MovieLensDataset(Dataset):
             }
 
     def load_data(self):
+        print('reading csv: ' + self.path)
         ratings = pd.read_csv(self.path)
 
         self.user_to_idx = {userid: idx for idx, userid in enumerate(set(ratings['userId']))}
@@ -41,6 +42,8 @@ class MovieLensDataset(Dataset):
         self.n_movie = len(self.movie_to_idx)
 
         for i in range(self.size):
+            if i % 10000 == 0:
+                print('processing %.2f' % (100*i/self.size))
             userid = ratings.loc[i, 'userId']
             movieid = ratings.loc[i, 'movieId']
             rating = ratings.loc[i, 'rating']

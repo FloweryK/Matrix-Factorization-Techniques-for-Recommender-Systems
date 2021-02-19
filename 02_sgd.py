@@ -1,4 +1,5 @@
 import numpy as np
+import config
 from funcs import make_ui_matrix, calculate_rmse
 from dataset import MovieLensDataset
 
@@ -9,7 +10,7 @@ def run():
     lr = 0.01
     r_lambda = 0.01
 
-    dataset = MovieLensDataset(path='data/ml-latest-small/ratings.csv', is_tensor=False)
+    dataset = MovieLensDataset(path=config.DATA_PATH, is_tensor=False)
 
     # make user-item matrix
     print('making user-item matrix')
