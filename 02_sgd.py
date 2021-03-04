@@ -2,6 +2,7 @@ import numpy as np
 import config
 from funcs import make_ui_matrix, calculate_rmse
 from dataset import MovieLensDataset
+from evaluator import Evaluator
 
 
 def run():
@@ -11,31 +12,30 @@ def run():
     r_lambda = 0.01
 
     dataset = MovieLensDataset(path=config.DATA_PATH, is_tensor=False)
+    evaluator = Evaluator()
 
-    # make user-item matrix
-    print('making user-item matrix')
-    ui_mat = make_ui_matrix(dataset)
-
-    # SGD
-    print('optimizing in SGD')
+    # Initialize Latent Factor
     n_user, n_movie = dataset.n_user, dataset.n_movie
     X_user = np.random.normal(scale=1.0 / factors, size=(n_user, factors))
     X_movie = np.random.normal(scale=1.0 / factors, size=(n_movie, factors))
-    non_zeros = [(i, j, ui_mat[i, j]) for i in range(n_user) for j in range(n_movie) if ui_mat[i, j] > 0]
 
+    # SGD
+    print('optimizing in SGD')
     for epoch in range(epochs):
-        for i, j, r in non_zeros:
+        for data in dataset:
+            i, j = data['x']
+            rating = data['r']
+
             # update
-            e = r - np.dot(X_user[i], X_movie[j])
-            X_user[i] += lr * (e * X_movie[j] - r_lambda * X_user[i])
-            X_movie[j] += lr * (e * X_user[i] - r_lambda * X_movie[j])
+            predict = np.dot(X_user[i], X_movie[j])
+            error = rating - predict
+            X_user[i] += lr * (error * X_movie[j] - r_lambda * X_user[i])
+            X_movie[j] += lr * (error * X_user[i] - r_lambda * X_movie[j])
 
-        # evaluate
-        labels = [rating for _, _, rating in non_zeros]
-        predicts = [np.dot(X_user[i], X_movie[j]) for i, j, rating in non_zeros]
+            evaluator.append(rating, predict)
 
-        rmse = calculate_rmse(labels, predicts)
         if epoch % 10 == 0:
+            rmse = evaluator.calulate('rmse')
             print("iter step: {0}, rmse: {1:4f}".format(epoch, rmse))
 
 
