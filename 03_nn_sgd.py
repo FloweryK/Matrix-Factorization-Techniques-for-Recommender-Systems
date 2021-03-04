@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader, random_split
 import numpy as np
 import config
 from dataset import MovieLensDataset
+from evaluator import Evaluator
 
 
 class Embedding(nn.Module):
@@ -27,11 +28,11 @@ class Embedding(nn.Module):
 if __name__ == '__main__':
     N_BATCH = 10
     N_EPOCH = 200
-    N_FACTOR = 10
+    N_FACTOR = 3
     lr = 0.01
     l2_lambda = 0.01
 
-    print('making dataset')
+    # make dataset, dataloader
     dataset = MovieLensDataset(path=config.DATA_PATH, is_tensor=True)
     n_train = int(len(dataset)*0.8)
     n_test = int(len(dataset)*0.1)
@@ -41,11 +42,13 @@ if __name__ == '__main__':
     testloader = DataLoader(dataset=testset, batch_size=N_BATCH, num_workers=4, shuffle=True)
     valiloader = DataLoader(dataset=valiset, batch_size=N_BATCH, num_workers=4, shuffle=True)
 
-    print('making model, loss, optimizer')
+    # make model, criterion, optimizer, evaluator
     model = Embedding(N_USER=dataset.n_user, N_ITEM=dataset.n_movie, N_EMBED=N_FACTOR)
     criterion = nn.MSELoss()
     optimizer = optim.SGD(model.parameters(), lr=lr)
+    evaluator = Evaluator()
 
+    # train model
     print('training')
     for epoch in range(N_EPOCH):
         # measure dt / epoch
@@ -93,5 +96,4 @@ if __name__ == '__main__':
         end = time.time()
 
         print('epoch: %i | RMSE: train=%.3f, test=%.3f, vali=%.3f | time: %.2f s)' % (epoch+1, np.sqrt(train_loss), np.sqrt(test_loss), np.sqrt(vali_loss), end-start))
-
 
