@@ -3,5 +3,6 @@
 __pycache__/
 data/
 venv/
+runs/
 
 **.ipynb
