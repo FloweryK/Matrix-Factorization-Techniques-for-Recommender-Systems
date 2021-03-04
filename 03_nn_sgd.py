@@ -24,7 +24,7 @@ class Embedding(nn.Module):
 
 if __name__ == '__main__':
     # parameters
-    N_BATCH = 4
+    N_BATCH = 10
     N_EMBED = 3
     N_EPOCH = 20
 
@@ -37,11 +37,11 @@ if __name__ == '__main__':
     # make model
     model = Embedding(N_USER=dataset.n_user,
                       N_ITEM=dataset.n_movie,
-                      N_EMBED=3)
+                      N_EMBED=N_EMBED)
 
     # train
     trainer = Trainer(model)
-    for epoch in range(20):
+    for epoch in range(N_EPOCH):
         print(epoch)
         trainer.single_epoch(trainloader, tag='train')
         trainer.single_epoch(testloader, tag='test')
