@@ -43,7 +43,7 @@ if __name__ == '__main__':
     trainer = Trainer(model)
     for epoch in range(N_EPOCH):
         print(epoch)
-        trainer.single_epoch(trainloader, tag='train')
-        trainer.single_epoch(testloader, tag='test')
-        trainer.single_epoch(valiloader, tag='vali')
+        trainer.single_epoch(trainloader, tag='train', epoch=epoch)
+        trainer.single_epoch(testloader, tag='test', epoch=epoch)
+        trainer.single_epoch(valiloader, tag='vali', epoch=epoch)
 

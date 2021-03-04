@@ -12,12 +12,10 @@ class Trainer:
         self.optimizer = optim.SGD(self.model.parameters(), lr=0.01)
         self.evaluator = Evaluator()
         self.writer = SummaryWriter()
-        self.epoch = 0
 
-    def single_epoch(self, dataloader, tag):
+    def single_epoch(self, dataloader, tag, epoch):
         t_start = time.time()
         running_loss = 0
-        self.epoch += 1
 
         for data in dataloader:
             x = data['x']
@@ -36,7 +34,7 @@ class Trainer:
         metric = self.evaluator.calulate('rmse')
         t_end = time.time()
 
-        self.writer.add_scalar(f'Loss/{tag}', running_loss, self.epoch)
-        self.writer.add_scalar(f'Time/{tag}', t_end - t_start, self.epoch)
-        self.writer.add_scalar(f'rmse/{tag}', metric, self.epoch)
+        self.writer.add_scalar(f'Loss/{tag}', running_loss, epoch)
+        self.writer.add_scalar(f'Time/{tag}', t_end - t_start, epoch)
+        self.writer.add_scalar(f'rmse/{tag}', metric, epoch)
 
