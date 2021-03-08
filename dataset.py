@@ -1,64 +1,34 @@
-import pandas as pd
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 
 class MovieLensDataset(Dataset):
-    def __init__(self, path, is_tensor=True):
-        self.path = path
+    def __init__(self, df, user_ids, movie_ids, is_tensor=True, is_groupby_user=False):
+        self.df = df
+        self.size = len(df)
         self.is_tensor = is_tensor
-        self.data = []
-        self.size = None
-        self.n_user = None
-        self.n_movie = None
-        self.user_to_idx = None
-        self.movie_to_idx = None
-
-        self.load_data()
+        self.is_groupby_user = is_groupby_user
+        self.user_to_idx = {user_id: i for i, user_id in enumerate(sorted(user_ids))}
+        self.movie_to_idx = {movie_id: i for i, movie_id in enumerate(sorted(movie_ids))}
 
     def __len__(self):
         return self.size
 
     def __getitem__(self, i):
+        row = self.df.iloc[i]
+        user_idx = self.user_to_idx[row['userId']]
+        movie_idx = self.movie_to_idx[row['movieId']]
+        r = row['rating']
+
         if self.is_tensor:
             return {
-                'x': torch.tensor(self.data[i]['x']),
-                'r': torch.tensor(self.data[i]['r'])
+                'x': torch.tensor([user_idx, movie_idx]),
+                'r': torch.tensor(r)
             }
         else:
             return {
-                'x': self.data[i]['x'],
-                'r': self.data[i]['r']
+                'x': [user_idx, movie_idx],
+                'r': r
             }
-
-    def load_data(self):
-        print('reading csv: ' + self.path)
-        ratings = pd.read_csv(self.path)
-
-        self.user_to_idx = {userid: idx for idx, userid in enumerate(set(ratings['userId']))}
-        self.movie_to_idx = {movieid: idx for idx, movieid in enumerate(set(ratings['movieId']))}
-        self.size = len(ratings.index)
-        self.n_user = len(self.user_to_idx)
-        self.n_movie = len(self.movie_to_idx)
-
-        for i in range(self.size):
-            if i % 10000 == 0:
-                print('processing %.2f' % (100*i/self.size))
-            userid = ratings.loc[i, 'userId']
-            movieid = ratings.loc[i, 'movieId']
-            rating = ratings.loc[i, 'rating']
-
-            self.data.append({'x': [self.user_to_idx[userid], self.movie_to_idx[movieid]],
-                              'r': rating})
-
-
-if __name__ == '__main__':
-    trainset = MovieLensDataset(path='data/ml-latest-small/ratings.csv')
-    trainloader = DataLoader(dataset=trainset, batch_size=3)
-
-    for data in trainloader:
-        print(data)
-
-
 
 

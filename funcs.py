@@ -1,33 +1,25 @@
 import numpy as np
-from torch.utils.data import DataLoader, random_split
 
 
-def make_ui_matrix(dataset):
-    n_user = dataset.n_user
-    n_movie = dataset.n_movie
-    ui_mat = np.zeros((n_user, n_movie))
+def split_dataset_by_time(df, ratio):
+    df = df.sort_values(by=['timestamp'])
 
-    for data in dataset:
-        user_idx, movie_idx = data['x']
-        rating = data['r']
-        ui_mat[user_idx][movie_idx] = rating
+    # split time in data
+    t_split = df['timestamp'][int(ratio * len(df))]
+    df_train = df[df['timestamp'] <= t_split]
+    df_future = df[(df['timestamp'] > t_split)
+                   & df['userId'].isin(df_train['userId'].unique())
+                   & df['movieId'].isin(df_train['movieId'].unique())].sample(frac=1)
+    df_test = df_future.iloc[:int(0.5 * len(df_future))]
+    df_vali = df_future.iloc[int(0.5 * len(df_future)):]
 
-    return ui_mat
-
-
-def calculate_rmse(labels, predicts):
-    labels = np.array(labels)
-    predicts = np.array(predicts)
-
-    return np.sqrt(np.mean((labels - predicts)**2))
+    return df_train, df_test, df_vali
 
 
-def split_dataset(dataset, n_batch):
-    n_train = int(len(dataset) * 0.8)
-    n_test = int(len(dataset) * 0.1)
-    n_vali = len(dataset) - n_train - n_test
-    trainset, testset, valiset = random_split(dataset, [n_train, n_test, n_vali])
-    trainloader = DataLoader(dataset=trainset, batch_size=n_batch, num_workers=4, shuffle=True)
-    testloader = DataLoader(dataset=testset, batch_size=n_batch, num_workers=4, shuffle=True)
-    valiloader = DataLoader(dataset=valiset, batch_size=n_batch, num_workers=4, shuffle=True)
-    return trainloader, testloader, valiloader
+def make_matrix(df, all_columns):
+    mat = df.pivot(index='userId', columns='movieId', values='rating')
+    mat[np.setdiff1d(all_columns, mat.columns)] = np.nan
+    mat = mat.fillna(0)
+    mat = mat.sort_index(axis=0)
+    mat = mat.sort_index(axis=1)
+    return mat

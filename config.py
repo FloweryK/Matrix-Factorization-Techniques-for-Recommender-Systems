@@ -1,1 +1,0 @@
-DATA_PATH = 'data/ml-latest-small/ratings.csv'

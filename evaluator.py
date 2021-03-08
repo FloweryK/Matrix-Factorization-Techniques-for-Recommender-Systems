@@ -34,3 +34,4 @@ class Evaluator:
     def clear(self):
         self.predicts = []
         self.labels = []
+

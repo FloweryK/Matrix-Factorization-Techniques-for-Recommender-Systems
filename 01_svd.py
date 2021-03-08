@@ -1,7 +1,18 @@
 import numpy as np
-import config
-from funcs import make_ui_matrix
 from dataset import MovieLensDataset
+
+
+def make_ui_matrix(dataset):
+    n_user = dataset.n_user
+    n_movie = dataset.n_movie
+    ui_mat = np.zeros((n_user, n_movie))
+
+    for data in dataset:
+        user_idx, movie_idx = data['x']
+        rating = data['r']
+        ui_mat[user_idx][movie_idx] = rating
+
+    return ui_mat
 
 
 def run():
