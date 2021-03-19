@@ -1,5 +1,18 @@
 import torch
+import pandas as pd
 from torch.utils.data import Dataset
+
+
+def read_movielens_dataset():
+    df = pd.read_csv('data/ml-latest-small/ratings.csv')
+    df.columns = ['userId', 'itemId', 'rating', 'timestamp']
+    return df
+
+
+def read_amazon_dataset():
+    df = pd.read_csv('data/amazon-fasion/AMAZON_FASHION.csv')
+    df.columns = ['itemId', 'userId', 'rating', 'timestamp']
+    return df
 
 
 class RatingsDataset(Dataset):
