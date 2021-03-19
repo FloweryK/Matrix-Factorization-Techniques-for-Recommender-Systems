@@ -1,9 +1,8 @@
 import time
 import numpy as np
-import pandas as pd
 from torch.utils.tensorboard import SummaryWriter
 from funcs import split_dataset_by_time
-from dataset import RatingsDataset
+from dataset import RatingsDataset, read_amazon_dataset
 from evaluator import Evaluator
 
 
@@ -54,12 +53,8 @@ if __name__ == '__main__':
     N_EMBED = 3
     N_EPOCH = 200
 
-    # load excel
-    # df = pd.read_csv('data/ml-latest-small/ratings.csv')
-
     # load AMAZON FASHION data
-    df = pd.read_csv('data/amazon-fasion/AMAZON_FASHION.csv')
-    df.columns = ['itemId', 'userId', 'rating', 'timestamp']
+    df = read_amazon_dataset()
 
     # split by time
     df_train, df_test, df_vali = split_dataset_by_time(df, ratio=0.5)

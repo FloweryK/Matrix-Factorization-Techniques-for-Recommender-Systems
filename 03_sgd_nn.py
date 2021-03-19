@@ -1,12 +1,11 @@
 import time
-import pandas as pd
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from funcs import split_dataset_by_time
 from models import Embedding
-from dataset import MovieLensDataset
+from dataset import RatingsDataset, read_amazon_dataset
 from evaluator import Evaluator
 
 
@@ -57,21 +56,21 @@ if __name__ == '__main__':
     N_BATCH = 24
 
     # load excel
-    df = pd.read_csv('data/ml-latest-small/ratings.csv')
+    df = read_amazon_dataset()
     df_train, df_test, df_vali = split_dataset_by_time(df, ratio=0.5)
 
     # make dataset
     user_ids = df['userId'].unique()
-    movie_ids = df['movieId'].unique()
-    trainset = MovieLensDataset(df=df_train,
-                                user_ids=user_ids,
-                                movie_ids=movie_ids)
-    testset = MovieLensDataset(df=df_test,
-                               user_ids=user_ids,
-                               movie_ids=movie_ids)
-    valiset = MovieLensDataset(df=df_vali,
-                               user_ids=user_ids,
-                               movie_ids=movie_ids)
+    item_ids = df['itemId'].unique()
+    trainset = RatingsDataset(df=df_train,
+                              user_ids=user_ids,
+                              item_ids=item_ids)
+    testset = RatingsDataset(df=df_test,
+                             user_ids=user_ids,
+                             item_ids=item_ids)
+    valiset = RatingsDataset(df=df_vali,
+                             user_ids=user_ids,
+                             item_ids=item_ids)
 
     # make dataloader
     trainloader = DataLoader(dataset=trainset,
@@ -83,7 +82,7 @@ if __name__ == '__main__':
 
     # make model
     model = Embedding(n_user=len(user_ids),
-                      n_item=len(movie_ids),
+                      n_item=len(item_ids),
                       n_embed=N_EMBED)
 
     # training
