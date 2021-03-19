@@ -9,7 +9,7 @@ def split_dataset_by_time(df, ratio):
     df_train = df[df['timestamp'] <= t_split]
     df_future = df[(df['timestamp'] > t_split)
                    & df['userId'].isin(df_train['userId'].unique())
-                   & df['movieId'].isin(df_train['movieId'].unique())].sample(frac=1)
+                   & df['itemId'].isin(df_train['itemId'].unique())].sample(frac=1)
     df_test = df_future.iloc[:int(0.5 * len(df_future))]
     df_vali = df_future.iloc[int(0.5 * len(df_future)):]
 
@@ -17,7 +17,7 @@ def split_dataset_by_time(df, ratio):
 
 
 def make_matrix(df, all_columns):
-    mat = df.pivot(index='userId', columns='movieId', values='rating')
+    mat = df.pivot(index='userId', columns='itemId', values='rating')
     mat[np.setdiff1d(all_columns, mat.columns)] = np.nan
     mat = mat.fillna(0)
     mat = mat.sort_index(axis=0)

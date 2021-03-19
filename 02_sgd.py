@@ -3,17 +3,17 @@ import numpy as np
 import pandas as pd
 from torch.utils.tensorboard import SummaryWriter
 from funcs import split_dataset_by_time
-from dataset import MovieLensDataset
+from dataset import RatingsDataset
 from evaluator import Evaluator
 
 
 class Embedding:
-    def __init__(self, n_user, n_movie, n_embed):
+    def __init__(self, n_user, n_item, n_embed):
         self.X_user = np.random.normal(scale=1.0 / n_embed, size=(n_user, n_embed))
-        self.X_movie = np.random.normal(scale=1.0 / n_embed, size=(n_movie, n_embed))
+        self.X_item = np.random.normal(scale=1.0 / n_embed, size=(n_item, n_embed))
 
     def __call__(self, x):
-        return np.dot(self.X_user[x[0]], self.X_movie[x[1]])
+        return np.dot(self.X_user[x[0]], self.X_item[x[1]])
 
 
 class Trainer:
@@ -38,9 +38,9 @@ class Trainer:
                 i, j = x
                 e = r - r_pred
                 x_user = self.model.X_user[i]
-                x_movie = self.model.X_movie[j]
-                self.model.X_user[i] += lr * (e * x_movie - r_lambda * x_user)
-                self.model.X_movie[j] += lr * (e * x_user - r_lambda * x_movie)
+                x_item = self.model.X_item[j]
+                self.model.X_user[i] += lr * (e * x_item - r_lambda * x_user)
+                self.model.X_item[j] += lr * (e * x_user - r_lambda * x_item)
 
         metric = self.evaluator.calulate('rmse')
         t_end = time.time()
@@ -55,28 +55,34 @@ if __name__ == '__main__':
     N_EPOCH = 200
 
     # load excel
-    df = pd.read_csv('data/ml-latest-small/ratings.csv')
+    # df = pd.read_csv('data/ml-latest-small/ratings.csv')
+
+    # load AMAZON FASHION data
+    df = pd.read_csv('data/amazon-fasion/AMAZON_FASHION.csv')
+    df.columns = ['itemId', 'userId', 'rating', 'timestamp']
+
+    # split by time
     df_train, df_test, df_vali = split_dataset_by_time(df, ratio=0.5)
 
     # make dataset
     user_ids = df['userId'].unique()
-    movie_ids = df['movieId'].unique()
-    trainset = MovieLensDataset(df=df_train,
-                                user_ids=user_ids,
-                                movie_ids=movie_ids,
-                                is_tensor=False)
-    testset = MovieLensDataset(df=df_test,
-                               user_ids=user_ids,
-                               movie_ids=movie_ids,
-                               is_tensor=False)
-    valiset = MovieLensDataset(df=df_vali,
-                               user_ids=user_ids,
-                               movie_ids=movie_ids,
-                               is_tensor=False)
+    item_ids = df['itemId'].unique()
+    trainset = RatingsDataset(df=df_train,
+                              user_ids=user_ids,
+                              item_ids=item_ids,
+                              is_tensor=False)
+    testset = RatingsDataset(df=df_test,
+                             user_ids=user_ids,
+                             item_ids=item_ids,
+                             is_tensor=False)
+    valiset = RatingsDataset(df=df_vali,
+                             user_ids=user_ids,
+                             item_ids=item_ids,
+                             is_tensor=False)
 
     # make model
     model = Embedding(n_user=len(user_ids),
-                      n_movie=len(movie_ids),
+                      n_item=len(item_ids),
                       n_embed=N_EMBED)
 
     # training
