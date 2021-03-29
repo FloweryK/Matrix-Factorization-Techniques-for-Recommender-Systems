@@ -16,11 +16,10 @@ def read_amazon_dataset():
 
 
 class RatingsDataset(Dataset):
-    def __init__(self, df, user_ids, item_ids, is_tensor=True, is_groupby_user=False):
+    def __init__(self, df, user_ids, item_ids, is_tensor=True):
         self.df = df
         self.size = len(df)
         self.is_tensor = is_tensor
-        self.is_groupby_user = is_groupby_user
         self.user_to_idx = {user_id: i for i, user_id in enumerate(sorted(user_ids))}
         self.item_to_idx = {item_id: i for i, item_id in enumerate(sorted(item_ids))}
 
