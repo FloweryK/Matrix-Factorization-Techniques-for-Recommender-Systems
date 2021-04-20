@@ -15,7 +15,7 @@ class Trainer:
 
         for data in dataloader:
             # inference
-            x = data['x'].long()
+            x = data['x']
             r = data['r']
             r_pred = self.model(x)
 

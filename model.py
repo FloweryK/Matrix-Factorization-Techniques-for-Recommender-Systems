@@ -12,9 +12,11 @@ class Embedding(nn.Module):
 
     def forward(self, x):
         # x (B, 2)
-        x_user = self.embedding_user(x[:, 0])       # (B, N_EMBED)
-        x_item = self.embedding_item(x[:, 1])       # (B, N_EMBED)
-
-        x = torch.sum(x_user*x_item, dim=1)         # (B)
-
+        x_user = self.embedding_user(x[:, 0].long())       # (B, N_EMBED)
+        x_item = self.embedding_item(x[:, 1].long())       # (B, N_EMBED)
+        mu = x[:, 2]
+        b_user = x[:, 3]
+        b_item = x[:, 3]
+        x = mu + b_user + b_item + torch.sum(x_user * x_item, dim=1)  # (B)
+        # x = torch.sum(x_user*x_item, dim=1)         # (B)
         return x

@@ -1,12 +1,13 @@
+import pandas as pd
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from model import Embedding
-from funcs import *
 from config import *
 from dataset import RatingDataset
 from trainer import Trainer
 from dataloader import read_movielens
+pd.options.mode.chained_assignment = None
 
 
 if __name__ == '__main__':
@@ -14,7 +15,14 @@ if __name__ == '__main__':
     df = read_movielens()
 
     # time split train, test, vali
-    df_train, df_test, df_vali = split_df_by_time(df, ratio=SPLIT_RATIO)
+    t_split = df['timestamp'].tolist()[int(len(df) * SPLIT_RATIO)]
+    df_train = df[df['timestamp'] <= t_split]
+    df_future = df[(df['timestamp'] > t_split)
+                   & df['userId'].isin(df_train['userId'].unique())
+                   & df['itemId'].isin(df_train['itemId'].unique())].sample(frac=1)
+    df_test = df_future.iloc[:int(0.5 * len(df_future))]
+    df_vali = df_future.iloc[int(0.5 * len(df_future)):]
+
     print(f'size | trainset: {len(df_train)} | testset: {len(df_test)} | valiset: {len(df_vali)}')
     print(f'unique users | trainset: {len(df_train["userId"].unique())} | testset: {len(df_test["userId"].unique())} | valiset: {len(df_vali["userId"].unique())}')
     print(f'unique items | trainset: {len(df_train["itemId"].unique())} | testset: {len(df_test["itemId"].unique())} | valiset: {len(df_vali["itemId"].unique())}')
@@ -35,6 +43,20 @@ if __name__ == '__main__':
     df_vali['userIdx'] = df_vali['userId'].map(lambda x: user_id2idx[x])
     df_vali['itemIdx'] = df_vali['itemId'].map(lambda x: item_id2idx[x])
 
+    # bias calculation on trainset
+    mu = df_train['rating'].mean()
+    b_user = {user_id: group['rating'].mean() for user_id, group in df_train.groupby(['userId'])}
+    b_item = {item_id: group['rating'].mean() for item_id, group in df_train.groupby(['itemId'])}
+    df_train['mu'] = mu
+    df_train['b_user'] = df_train['userId'].map(lambda x: b_user[x])
+    df_train['b_item'] = df_train['itemId'].map(lambda x: b_item[x])
+    df_test['mu'] = mu
+    df_test['b_user'] = df_test['userId'].map(lambda x: b_user[x])
+    df_test['b_item'] = df_test['itemId'].map(lambda x: b_item[x])
+    df_vali['mu'] = mu
+    df_vali['b_user'] = df_vali['userId'].map(lambda x: b_user[x])
+    df_vali['b_item'] = df_vali['itemId'].map(lambda x: b_item[x])
+
     # make dataset
     trainset = RatingDataset(df_train)
     testset = RatingDataset(df_test)
@@ -48,7 +70,7 @@ if __name__ == '__main__':
     # model
     model = Embedding(n_user=len(user_ids), n_item=len(item_ids), n_embed=N_EMBED)
     criterion = nn.MSELoss()
-    optimizer = optim.SGD(model.parameters(), lr=lr, weight_decay=WEIGHT_DECAY)
+    optimizer = optim.SGD(model.parameters(), lr=lr)
 
     # trainer
     trainer = Trainer(
