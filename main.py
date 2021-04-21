@@ -43,20 +43,6 @@ if __name__ == '__main__':
     df_vali['userIdx'] = df_vali['userId'].map(lambda x: user_id2idx[x])
     df_vali['itemIdx'] = df_vali['itemId'].map(lambda x: item_id2idx[x])
 
-    # bias calculation on trainset
-    mu = df_train['rating'].mean()
-    b_user = {user_id: group['rating'].mean() for user_id, group in df_train.groupby(['userId'])}
-    b_item = {item_id: group['rating'].mean() for item_id, group in df_train.groupby(['itemId'])}
-    df_train['mu'] = mu
-    df_train['b_user'] = df_train['userId'].map(lambda x: b_user[x])
-    df_train['b_item'] = df_train['itemId'].map(lambda x: b_item[x])
-    df_test['mu'] = mu
-    df_test['b_user'] = df_test['userId'].map(lambda x: b_user[x])
-    df_test['b_item'] = df_test['itemId'].map(lambda x: b_item[x])
-    df_vali['mu'] = mu
-    df_vali['b_user'] = df_vali['userId'].map(lambda x: b_user[x])
-    df_vali['b_item'] = df_vali['itemId'].map(lambda x: b_item[x])
-
     # make dataset
     trainset = RatingDataset(df_train)
     testset = RatingDataset(df_test)
