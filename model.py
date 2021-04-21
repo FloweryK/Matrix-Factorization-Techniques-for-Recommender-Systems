@@ -24,6 +24,6 @@ class Embedding(nn.Module):
         b_user = self.b_user(x[:, 0].long()).view(-1)               # (B)
         b_item = self.b_item(x[:, 1].long()).view(-1)               # (B)
 
-        x = torch.sum(x_user * x_item, dim=1)  # (B)
-        # x = mu + b_user + b_item + torch.sum(x_user*x_item, dim=1)  # (B)
+        # x = torch.sum(x_user * x_item, dim=1)  # (B)
+        x = mu + b_user + b_item + torch.sum(x_user*x_item, dim=1)  # (B)
         return x
