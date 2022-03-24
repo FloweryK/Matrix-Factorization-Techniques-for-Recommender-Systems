@@ -1,21 +1,20 @@
+
+import torch
+import numpy as np
 import pandas as pd
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from model import Embedding
-from config import *
-from dataset import RatingDataset
-from trainer import Trainer
-from dataloader import read_movielens
 pd.options.mode.chained_assignment = None
 
 
-if __name__ == '__main__':
-    # prepare prerequisites
-    df = read_movielens()
+def read_movielens(path):
+    df = pd.read_csv(path)
+    df.columns = ['userId', 'itemId', 'rating', 'timestamp']
+    df = df.sort_values(by=['timestamp'])
+    return df
 
+
+def split_movielens_by_time(df, split_ratio):
     # time split train, test, vali
-    t_split = df['timestamp'].tolist()[int(len(df) * SPLIT_RATIO)]
+    t_split = df['timestamp'].tolist()[int(len(df) * split_ratio)]
     df_train = df[df['timestamp'] <= t_split]
     df_future = df[(df['timestamp'] > t_split)
                    & df['userId'].isin(df_train['userId'].unique())
@@ -32,8 +31,6 @@ if __name__ == '__main__':
     item_ids = set().union(*[df_train['itemId'].unique(), df_test['itemId'].unique(), df_vali['itemId'].unique()])
     user_id2idx = {id: idx for idx, id in enumerate(user_ids)}
     item_id2idx = {id: idx for idx, id in enumerate(item_ids)}
-    user_idx2id = {idx: id for id, idx in user_id2idx.items()}
-    item_idx2id = {idx: id for id, idx in item_id2idx.items()}
 
     # add idx column
     df_train['userIdx'] = df_train['userId'].map(lambda x: user_id2idx[x])
@@ -43,31 +40,39 @@ if __name__ == '__main__':
     df_vali['userIdx'] = df_vali['userId'].map(lambda x: user_id2idx[x])
     df_vali['itemIdx'] = df_vali['itemId'].map(lambda x: item_id2idx[x])
 
-    # make dataset
-    trainset = RatingDataset(df_train)
-    testset = RatingDataset(df_test)
-    valiset = RatingDataset(df_vali)
+    return df_train, df_test, df_vali, len(user_ids), len(item_ids)
 
-    # make dataloader
-    trainloader = DataLoader(dataset=trainset, batch_size=N_BATCH, shuffle=True)
-    testloader = DataLoader(dataset=testset, batch_size=N_BATCH, shuffle=True)
-    valiloader = DataLoader(dataset=valiset, batch_size=N_BATCH, shuffle=True)
 
-    # model
-    model = Embedding(n_user=len(user_ids), n_item=len(item_ids), n_embed=N_EMBED)
-    criterion = nn.MSELoss()
-    optimizer = optim.SGD(model.parameters(), lr=lr)
+class Evaluator:
+    def __init__(self):
+        self.predicts = []
+        self.labels = []
 
-    # trainer
-    trainer = Trainer(
-        model=model,
-        criterion=criterion,
-        optimizer=optimizer
-    )
+    def append(self, label, predict):
+        if type(label) == torch.Tensor:
+            if label.dim() == 0:
+                self.predicts.append(predict)
+                self.labels.append(label)
+            elif label.dim() == 1:
+                self.predicts += predict.tolist()
+                self.labels += label.tolist()
+        else:
+            self.predicts.append(predict)
+            self.labels.append(label)
 
-    for epoch in range(N_EPOCH):
-        print(epoch)
-        trainer.single_epoch(trainloader, tag='train', epoch=epoch)
-        trainer.single_epoch(testloader, tag='test', epoch=epoch)
-        trainer.single_epoch(valiloader, tag='vali', epoch=epoch)
+    def calulate(self, kind):
+        self.predicts = np.array(self.predicts)
+        self.labels = np.array(self.labels)
+
+        if kind == 'rmse':
+            value = np.sqrt(np.mean((self.labels - self.predicts)**2))
+        else:
+            raise KeyError(f'invalid kind: {kind}')
+
+        self.clear()
+        return value
+
+    def clear(self):
+        self.predicts = []
+        self.labels = []
 

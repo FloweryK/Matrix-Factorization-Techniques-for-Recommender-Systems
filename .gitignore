@@ -1,8 +1,6 @@
 .idea/
-.ipynb_checkpoints/
+.DS_Store
 __pycache__/
-data/
+
 venv/
 runs/
-
-**.ipynb

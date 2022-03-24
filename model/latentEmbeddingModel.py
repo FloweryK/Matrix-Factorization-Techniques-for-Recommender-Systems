@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 
 
-class Embedding(nn.Module):
+class LatentEmbeddingModel(nn.Module):
     def __init__(self, n_user, n_item, n_embed):
-        super(Embedding, self).__init__()
+        super(LatentEmbeddingModel, self).__init__()
 
         # embedding layer (B, 2) -> (B, 2, N_EMBED)
         self.embedding_user = nn.Embedding(n_user, n_embed)
